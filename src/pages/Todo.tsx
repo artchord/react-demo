@@ -4,13 +4,11 @@ import { TodoList } from "@components/templates/TodoList";
 import type { Todo } from "@type/todo";
 
 export function Todo() {
-  const savedData = localStorage.getItem("todos");
-  const defaultTodos: Todo[] = savedData
-    ? (JSON.parse(savedData) as Todo[])
-    : [];
-
   const [title, setTitle] = useState("");
-  const [todos, setTodos] = useState<Todo[]>(defaultTodos);
+  const [todos, setTodos] = useState<Todo[]>(() => {
+    const savedData = localStorage.getItem("todos");
+    return savedData ? (JSON.parse(savedData) as Todo[]) : [];
+  });
 
   useEffect(() => {
     localStorage.setItem("todos", JSON.stringify(todos));
