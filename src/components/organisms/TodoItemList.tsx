@@ -13,7 +13,7 @@ import type { TodoProps } from "@type/todo";
 import { Delete } from "@mui/icons-material";
 import { TransitionGroup } from "react-transition-group";
 
-export function TodoItemList({
+export default function TodoItemList({
   todos,
   deleteTodo,
   toggleTodo,

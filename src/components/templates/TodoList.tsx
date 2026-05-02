@@ -11,10 +11,10 @@ import {
 } from "@mui/material";
 import { ArrowDropDown } from "@mui/icons-material";
 import { useMemo } from "react";
-import { TodoItemList } from "@components/organisms/TodoItemList";
+import TodoItemList from "@components/organisms/TodoItemList";
 import type { TodoProps } from "@type/todo";
 
-export function TodoList({
+export default function TodoList({
   title,
   setTitle,
   todos,
