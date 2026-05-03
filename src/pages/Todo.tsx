@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import TodoList from "@components/templates/TodoList";
 import type { Todo } from "@type/todo";
 import InfoBox from "@components/organisms/InfoBox";
+import DefaultLayout from "../layouts/DefaultLayout";
 
 export default function Todo() {
   const [title, setTitle] = useState("");
@@ -41,28 +42,32 @@ export default function Todo() {
   };
 
   return (
-    <Container
-      maxWidth="sm"
-      sx={{ py: 4, display: "flex", flexDirection: "column", gap: "16px" }}
-    >
-      <InfoBox title="使い方">
-        <div>
-          ・タスクを入力して「追加」ボタンを押すか、Enterキーを押してください。
-        </div>
-        <div>・タスクにチェックを入れると完了になります。</div>
-        <div>・タスクの右端のゴミ箱アイコンを押すとタスクが削除されます。</div>
-        <div>
-          ・ローカルストレージに保存しているのでリロードしてもタスクは維持されます。
-        </div>
-      </InfoBox>
-      <TodoList
-        title={title}
-        setTitle={setTitle}
-        todos={todos}
-        addTodo={addTodo}
-        toggleTodo={toggleTodo}
-        deleteTodo={deleteTodo}
-      />
-    </Container>
+    <DefaultLayout>
+      <Container
+        maxWidth="sm"
+        sx={{ pb: 4, display: "flex", flexDirection: "column", gap: "16px" }}
+      >
+        <InfoBox title="使い方">
+          <div>
+            ・タスクを入力して「追加」ボタンを押すか、Enterキーを押してください。
+          </div>
+          <div>・タスクにチェックを入れると完了になります。</div>
+          <div>
+            ・タスクの右端のゴミ箱アイコンを押すとタスクが削除されます。
+          </div>
+          <div>
+            ・ローカルストレージに保存しているのでリロードしてもタスクは維持されます。
+          </div>
+        </InfoBox>
+        <TodoList
+          title={title}
+          setTitle={setTitle}
+          todos={todos}
+          addTodo={addTodo}
+          toggleTodo={toggleTodo}
+          deleteTodo={deleteTodo}
+        />
+      </Container>
+    </DefaultLayout>
   );
 }
