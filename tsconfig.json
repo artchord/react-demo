@@ -17,7 +17,10 @@
     "jsx": "react-jsx",
     "paths": {
       "@components/*": ["./src/components/*"],
-      "@type/*": ["./src/type/*"]
+      "@type/*": ["./src/type/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@layouts/*": ["./src/layouts/*"],
+      "@pages/*": ["./src/pages/*"]
     }
   },
   "include": ["src", "vite-env.d.ts"],

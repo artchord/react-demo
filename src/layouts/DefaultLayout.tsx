@@ -29,7 +29,7 @@ const drawerWidth = 240;
 export default function DefaultLayout({ children }: Props) {
   const drawerItems = [
     { text: "TODO", to: "/todo", icon: <ChecklistIcon /> },
-    { text: "フォームビルダー", to: "/form-builder", icon: <BuildIcon /> },
+    { text: "フォームビルダー", to: "/builder", icon: <BuildIcon /> },
   ];
 
   const drawer = (
@@ -53,7 +53,6 @@ export default function DefaultLayout({ children }: Props) {
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
       <AppBar
-        position="fixed"
         sx={{
           ml: { sm: `${drawerWidth}px` },
           zIndex: (theme) => theme.zIndex.drawer + 1,
@@ -90,6 +89,7 @@ export default function DefaultLayout({ children }: Props) {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
+          height: "100vh",
         }}
       >
         <Toolbar variant="dense" />
