@@ -6,35 +6,34 @@ import {
   PointerSensor,
   type DragEndEvent,
 } from "@dnd-kit/react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { FormField, FormItemType } from "@type/formItem";
 import useFormItem from "@hooks/useFormItem";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { isSortable } from "@dnd-kit/react/sortable";
 
 export default function FormBuilder() {
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [isDragOverDropZone, setIsDragOverDropZone] = useState(false);
   const { itemTemplates } = useFormItem();
-  console.log("formFields", formFields);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       setIsDragOverDropZone(false);
-      console.log("event", event);
 
       if (event.canceled) return;
 
-      const target = event.operation.target;
+      const { source, target } = event.operation;
 
-      // ドロップ領域がなければ中断
-      if (!target) return;
+      if (!source || !target) return;
 
-      const source = event.operation.source;
-      if (!source) return;
+      const sourceId = String(source.id) as FormItemType;
+      const targetId = String(target.id) as FormItemType;
 
-      const itemType = String(source.id) as FormItemType;
-
-      if (itemTemplates[itemType]) {
+      // 新規アイテムの追加（左側のパレットからのドラッグ）
+      if (itemTemplates[sourceId]) {
+        const itemType = sourceId;
         const newField: FormField = {
           id: `${itemType}-${Date.now()}`,
           type: itemType,
@@ -42,8 +41,34 @@ export default function FormBuilder() {
           placeholder: "",
           required: false,
         };
-        setFormFields((prev) => [...prev, newField]);
+
+        setFormFields((prev) => {
+          const overIndex = prev.findIndex((f) => f.id === targetId);
+          if (overIndex !== -1) {
+            // 既存のフィールドの上にドロップされた場合、その位置に挿入
+            const updated = [...prev];
+            updated.splice(overIndex, 0, newField);
+            return updated;
+          }
+          // コンテナ自体（ID: "droppable"）にドロップされた場合は末尾に追加
+          return [...prev, newField];
+        });
         setSelectedFieldId(newField.id);
+      } else {
+        // 既存アイテムの並び替え
+        if (isSortable(source)) {
+          setFormFields((prev) => {
+            const oldIndex = source.initialIndex;
+            const newIndex = source.index;
+            if (oldIndex !== -1 && newIndex !== -1) {
+              const updated = [...prev];
+              const [movedItem] = updated.splice(oldIndex, 1);
+              updated.splice(newIndex, 0, movedItem);
+              return updated;
+            }
+            return prev;
+          });
+        }
       }
     },
     [itemTemplates],
@@ -62,7 +87,10 @@ export default function FormBuilder() {
     if (selectedFieldId === id) setSelectedFieldId(null);
   };
 
-  const selectedField = formFields.find((f) => f.id === selectedFieldId);
+  const selectedField = useMemo(
+    () => formFields.find((f) => f.id === selectedFieldId),
+    [formFields, selectedFieldId],
+  );
 
   return (
     <DragDropProvider
@@ -80,73 +108,15 @@ export default function FormBuilder() {
 
         {/* 右側：フォーム編集エリア */}
         <Grid size={{ xs: 6, md: 9 }}>
-          <Stack spacing={2} sx={{ height: "100%" }}>
+          <Stack spacing={1} sx={{ height: "100%" }}>
             {/* フォームプレビュー */}
-            <Box
-              sx={{
-                flex: 1,
-                p: 2,
-                border: "2px dashed",
-                borderColor: isDragOverDropZone ? "primary.main" : "divider",
-                borderRadius: 1,
-                bgcolor: isDragOverDropZone
-                  ? "action.hover"
-                  : "background.paper",
-                overflow: "auto",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <FormSetting id="droppable" isActive={isDragOverDropZone}>
-                {formFields.length === 0 ? (
-                  <Typography
-                    variant="body2"
-                    color="textSecondary"
-                    sx={{ textAlign: "center", py: 4 }}
-                  >
-                    左からフォーム要素をドラッグしてドロップしてください
-                  </Typography>
-                ) : (
-                  <Stack spacing={2}>
-                    {formFields.map((field) => (
-                      <Box
-                        key={field.id}
-                        onClick={() => setSelectedFieldId(field.id)}
-                        sx={{
-                          p: 2,
-                          border: "1px solid",
-                          borderColor:
-                            selectedFieldId === field.id
-                              ? "primary.main"
-                              : "divider",
-                          borderRadius: 1,
-                          bgcolor:
-                            selectedFieldId === field.id
-                              ? "action.selected"
-                              : "background.paper",
-                          cursor: "pointer",
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            borderColor: "primary.main",
-                          },
-                        }}
-                      >
-                        <Typography variant="subtitle2">
-                          {field.label}
-                          {field.required && (
-                            <span style={{ color: "red", marginLeft: 4 }}>
-                              *
-                            </span>
-                          )}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {itemTemplates[field.type]?.label}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Stack>
-                )}
-              </FormSetting>
-            </Box>
+            <FormSetting
+              id="droppable"
+              isActive={isDragOverDropZone}
+              setSelectedFieldId={setSelectedFieldId}
+              selectedFieldId={selectedFieldId}
+              formFields={formFields}
+            />
 
             {/* フィールド設定パネル */}
             {selectedField && (

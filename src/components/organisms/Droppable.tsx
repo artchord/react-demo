@@ -21,7 +21,7 @@ export default function Droppable({ id, children, isActive }: DroppableProps) {
         border: "2px dashed",
         borderColor: isActive ? "primary.main" : "divider",
         borderRadius: 1,
-        p: 2,
+        py: 2,
         bgcolor: isActive ? "action.hover" : "background.paper",
         transition: "all 0.2s ease",
       }}
