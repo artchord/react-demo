@@ -1,16 +1,7 @@
 import FormItem from "@components/organisms/FormItem";
 import FormSetting from "@components/organisms/FormSetting";
-import {
-  Grid,
-  Box,
-  Button,
-  Stack,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from "@mui/material";
+import FormSettingDialog from "@components/organisms/FormSettingDialog";
+import { Grid, Stack } from "@mui/material";
 import {
   DragDropProvider,
   DragOverEvent,
@@ -20,7 +11,6 @@ import {
 import { useState, useCallback, useMemo } from "react";
 import { FormField, FormItemType } from "@type/formItem";
 import useFormItem from "@hooks/useFormItem";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { isSortable } from "@dnd-kit/react/sortable";
 
 export default function FormBuilder() {
@@ -153,79 +143,13 @@ export default function FormBuilder() {
             />
 
             {/* フィールド設定モーダル */}
-            <Dialog
-              open={isModalOpen && !!selectedField}
+            <FormSettingDialog
+              open={isModalOpen}
+              field={selectedField}
               onClose={() => setIsModalOpen(false)}
-              maxWidth="sm"
-              fullWidth
-              disableRestoreFocus
-            >
-              <DialogTitle>フィールド設定</DialogTitle>
-              <DialogContent>
-                {selectedField && (
-                  <Stack spacing={2} sx={{ pt: 1 }}>
-                    <TextField
-                      label="ラベル"
-                      value={selectedField.label}
-                      onChange={(e) =>
-                        handleUpdateField(selectedField.id, {
-                          label: e.target.value,
-                        })
-                      }
-                      fullWidth
-                      size="small"
-                    />
-                    <TextField
-                      label="プレースホルダー"
-                      value={selectedField.placeholder ?? ""}
-                      onChange={(e) =>
-                        handleUpdateField(selectedField.id, {
-                          placeholder: e.target.value,
-                        })
-                      }
-                      fullWidth
-                      size="small"
-                    />
-                    <Box>
-                      <input
-                        type="checkbox"
-                        checked={selectedField.required ?? false}
-                        onChange={(e) =>
-                          handleUpdateField(selectedField.id, {
-                            required: e.target.checked,
-                          })
-                        }
-                        id={`required-${selectedField.id}`}
-                      />
-                      <label
-                        htmlFor={`required-${selectedField.id}`}
-                        style={{ marginLeft: 8 }}
-                      >
-                        必須項目
-                      </label>
-                    </Box>
-                  </Stack>
-                )}
-              </DialogContent>
-              <DialogActions>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<DeleteIcon />}
-                  onClick={() =>
-                    selectedField && handleDeleteField(selectedField.id)
-                  }
-                >
-                  削除
-                </Button>
-                <Button
-                  onClick={() => setIsModalOpen(false)}
-                  variant="contained"
-                >
-                  閉じる
-                </Button>
-              </DialogActions>
-            </Dialog>
+              onUpdate={handleUpdateField}
+              onDelete={handleDeleteField}
+            />
           </Stack>
         </Grid>
       </Grid>
