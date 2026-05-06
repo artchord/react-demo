@@ -3,6 +3,7 @@ import FormSetting from "@components/organisms/FormSetting";
 import { Grid, Box, Button, Stack, TextField, Typography } from "@mui/material";
 import {
   DragDropProvider,
+  DragOverEvent,
   PointerSensor,
   type DragEndEvent,
 } from "@dnd-kit/react";
@@ -15,12 +16,21 @@ import { isSortable } from "@dnd-kit/react/sortable";
 export default function FormBuilder() {
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [isDraggingTemplate, setIsDraggingTemplate] = useState(false);
   const [isDragOverDropZone, setIsDragOverDropZone] = useState(false);
   const { itemTemplates } = useFormItem();
+
+  const selectedField = useMemo(
+    () => formFields.find((f) => f.id === selectedFieldId),
+    [formFields, selectedFieldId],
+  );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       setIsDragOverDropZone(false);
+      setIsDraggingTemplate(false);
+      setDragOverId(null);
 
       if (event.canceled) return;
 
@@ -74,30 +84,34 @@ export default function FormBuilder() {
     [itemTemplates],
   );
 
-  const handleUpdateField = (id: string, updates: Partial<FormField>) => {
+  function handleUpdateField(id: string, updates: Partial<FormField>) {
     setFormFields(
       formFields.map((field) =>
         field.id === id ? { ...field, ...updates } : field,
       ),
     );
-  };
+  }
 
-  const handleDeleteField = (id: string) => {
+  function handleDeleteField(id: string) {
     setFormFields(formFields.filter((field) => field.id !== id));
     if (selectedFieldId === id) setSelectedFieldId(null);
-  };
+  }
 
-  const selectedField = useMemo(
-    () => formFields.find((f) => f.id === selectedFieldId),
-    [formFields, selectedFieldId],
-  );
+  function handleDragOver(event: DragOverEvent) {
+    // ドラッグ開始時の判定
+    const sourceId = String(event.operation.source?.id);
+    if (itemTemplates[sourceId as FormItemType]) {
+      setIsDraggingTemplate(true);
+    }
+    const targetId = event.operation.target?.id;
+    setIsDragOverDropZone(!!targetId);
+    setDragOverId(targetId ? String(targetId) : null);
+  }
 
   return (
     <DragDropProvider
       sensors={[PointerSensor]}
-      onDragOver={(event) => {
-        setIsDragOverDropZone(!!event.operation.target);
-      }}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <Grid container spacing={2} sx={{ height: "calc(100% - 48px)" }}>
@@ -113,6 +127,8 @@ export default function FormBuilder() {
             <FormSetting
               id="droppable"
               isActive={isDragOverDropZone}
+              dragOverId={dragOverId}
+              isDraggingTemplate={isDraggingTemplate}
               setSelectedFieldId={setSelectedFieldId}
               selectedFieldId={selectedFieldId}
               formFields={formFields}
