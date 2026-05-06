@@ -16,9 +16,7 @@ export interface FormItemTemplate {
   icon: ReactNode;
 }
 
-export default function useFormItem(): {
-  itemTemplates: Record<FormItemType, FormItemTemplate>;
-} {
+export default function useFormItem() {
   const FORM_ITEM_TEMPLATES: Record<FormItemType, FormItemTemplate> = {
     text: { label: "テキスト", icon: <TextFields /> },
     textarea: { label: "テキストエリア", icon: <Notes /> },

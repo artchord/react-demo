@@ -1,9 +1,10 @@
 import Droppable from "@components/organisms/Droppable";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography, IconButton } from "@mui/material";
 import type { FormField } from "@type/formItem";
 import Sortable from "@components/organisms/Sortable";
 import useFormItem from "@hooks/useFormItem";
 import React from "react";
+import SettingsIcon from "@mui/icons-material/Settings";
 interface FormSettingProps {
   id: string;
   dragOverId: string | null;
@@ -12,16 +13,24 @@ interface FormSettingProps {
   isActive?: boolean;
   selectedFieldId: string | null;
   setSelectedFieldId: (id: string | null) => void;
+  onSettingsClick: (id: string) => void;
 }
 
 interface itemBoxProps {
   onClick?: () => void;
+  onSettingsClick?: () => void;
   field: FormField;
   selectedFieldId: string | null;
-  children: React.ReactNode;
 }
 
-function ItemBox({ onClick, field, selectedFieldId, children }: itemBoxProps) {
+function ItemBox({
+  onClick,
+  onSettingsClick,
+  field,
+  selectedFieldId,
+}: itemBoxProps) {
+  const { itemTemplates } = useFormItem();
+
   return (
     <Box
       onClick={onClick}
@@ -36,12 +45,34 @@ function ItemBox({ onClick, field, selectedFieldId, children }: itemBoxProps) {
           selectedFieldId === field.id ? "action.selected" : "background.paper",
         cursor: "pointer",
         transition: "all 0.2s ease",
+        display: "flex",
+        alignItems: "center",
         "&:hover": {
           borderColor: "primary.main",
         },
       }}
     >
-      {children}
+      <Box sx={{ flex: 1 }}>
+        <Typography variant="subtitle2">
+          {field.label}
+          {field.required && (
+            <span style={{ color: "red", marginLeft: 4 }}>*</span>
+          )}
+        </Typography>
+        <Typography variant="caption" color="textSecondary">
+          {itemTemplates[field.type]?.label}
+        </Typography>
+      </Box>
+      <IconButton
+        size="small"
+        onClick={(e) => {
+          e.stopPropagation();
+          onSettingsClick?.();
+        }}
+        sx={{ ml: 1, flexShrink: 0 }}
+      >
+        <SettingsIcon fontSize="small" />
+      </IconButton>
     </Box>
   );
 }
@@ -74,9 +105,8 @@ export default function FormSetting({
   isDraggingTemplate,
   selectedFieldId,
   setSelectedFieldId,
+  onSettingsClick,
 }: FormSettingProps) {
-  const { itemTemplates } = useFormItem();
-
   return (
     <Droppable id={id} isActive={isActive}>
       {formFields.length === 0 ? (
@@ -100,19 +130,10 @@ export default function FormSetting({
                   )}
                   <ItemBox
                     onClick={() => setSelectedFieldId(field.id)}
+                    onSettingsClick={() => onSettingsClick(field.id)}
                     field={field}
                     selectedFieldId={selectedFieldId}
-                  >
-                    <Typography variant="subtitle2">
-                      {field.label}
-                      {field.required && (
-                        <span style={{ color: "red", marginLeft: 4 }}>*</span>
-                      )}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {itemTemplates[field.type]?.label}
-                    </Typography>
-                  </ItemBox>
+                  />
                 </Box>
               </Sortable>
             </React.Fragment>

@@ -17,7 +17,7 @@ export default function Droppable({ id, children, isActive }: DroppableProps) {
       ref={ref}
       sx={{
         width: "100%",
-        minHeight: "300px",
+        height: "100%",
         border: "2px dashed",
         borderColor: isActive ? "primary.main" : "divider",
         borderRadius: 1,

@@ -1,6 +1,16 @@
 import FormItem from "@components/organisms/FormItem";
 import FormSetting from "@components/organisms/FormSetting";
-import { Grid, Box, Button, Stack, TextField, Typography } from "@mui/material";
+import {
+  Grid,
+  Box,
+  Button,
+  Stack,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import {
   DragDropProvider,
   DragOverEvent,
@@ -16,6 +26,7 @@ import { isSortable } from "@dnd-kit/react/sortable";
 export default function FormBuilder() {
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [isDraggingTemplate, setIsDraggingTemplate] = useState(false);
   const [isDragOverDropZone, setIsDragOverDropZone] = useState(false);
@@ -95,6 +106,12 @@ export default function FormBuilder() {
   function handleDeleteField(id: string) {
     setFormFields(formFields.filter((field) => field.id !== id));
     if (selectedFieldId === id) setSelectedFieldId(null);
+    setIsModalOpen(false);
+  }
+
+  function handleSettingsClick(id: string) {
+    setSelectedFieldId(id);
+    setIsModalOpen(true);
   }
 
   function handleDragOver(event: DragOverEvent) {
@@ -132,74 +149,83 @@ export default function FormBuilder() {
               setSelectedFieldId={setSelectedFieldId}
               selectedFieldId={selectedFieldId}
               formFields={formFields}
+              onSettingsClick={handleSettingsClick}
             />
 
-            {/* フィールド設定パネル */}
-            {selectedField && (
-              <Box
-                sx={{
-                  p: 2,
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 1,
-                  bgcolor: "background.paper",
-                }}
-              >
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  フィールド設定
-                </Typography>
-                <Stack spacing={2}>
-                  <TextField
-                    label="ラベル"
-                    value={selectedField.label}
-                    onChange={(e) =>
-                      handleUpdateField(selectedField.id, {
-                        label: e.target.value,
-                      })
-                    }
-                    fullWidth
-                    size="small"
-                  />
-                  <TextField
-                    label="プレースホルダー"
-                    value={selectedField.placeholder ?? ""}
-                    onChange={(e) =>
-                      handleUpdateField(selectedField.id, {
-                        placeholder: e.target.value,
-                      })
-                    }
-                    fullWidth
-                    size="small"
-                  />
-                  <Box>
-                    <input
-                      type="checkbox"
-                      checked={selectedField.required ?? false}
+            {/* フィールド設定モーダル */}
+            <Dialog
+              open={isModalOpen && !!selectedField}
+              onClose={() => setIsModalOpen(false)}
+              maxWidth="sm"
+              fullWidth
+              disableRestoreFocus
+            >
+              <DialogTitle>フィールド設定</DialogTitle>
+              <DialogContent>
+                {selectedField && (
+                  <Stack spacing={2} sx={{ pt: 1 }}>
+                    <TextField
+                      label="ラベル"
+                      value={selectedField.label}
                       onChange={(e) =>
                         handleUpdateField(selectedField.id, {
-                          required: e.target.checked,
+                          label: e.target.value,
                         })
                       }
-                      id={`required-${selectedField.id}`}
+                      fullWidth
+                      size="small"
                     />
-                    <label
-                      htmlFor={`required-${selectedField.id}`}
-                      style={{ marginLeft: 8 }}
-                    >
-                      必須項目
-                    </label>
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => handleDeleteField(selectedField.id)}
-                  >
-                    削除
-                  </Button>
-                </Stack>
-              </Box>
-            )}
+                    <TextField
+                      label="プレースホルダー"
+                      value={selectedField.placeholder ?? ""}
+                      onChange={(e) =>
+                        handleUpdateField(selectedField.id, {
+                          placeholder: e.target.value,
+                        })
+                      }
+                      fullWidth
+                      size="small"
+                    />
+                    <Box>
+                      <input
+                        type="checkbox"
+                        checked={selectedField.required ?? false}
+                        onChange={(e) =>
+                          handleUpdateField(selectedField.id, {
+                            required: e.target.checked,
+                          })
+                        }
+                        id={`required-${selectedField.id}`}
+                      />
+                      <label
+                        htmlFor={`required-${selectedField.id}`}
+                        style={{ marginLeft: 8 }}
+                      >
+                        必須項目
+                      </label>
+                    </Box>
+                  </Stack>
+                )}
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={() =>
+                    selectedField && handleDeleteField(selectedField.id)
+                  }
+                >
+                  削除
+                </Button>
+                <Button
+                  onClick={() => setIsModalOpen(false)}
+                  variant="contained"
+                >
+                  閉じる
+                </Button>
+              </DialogActions>
+            </Dialog>
           </Stack>
         </Grid>
       </Grid>
