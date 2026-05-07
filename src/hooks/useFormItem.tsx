@@ -8,6 +8,7 @@ import {
   Numbers,
   Email,
   CalendarToday,
+  Layers,
 } from "@mui/icons-material";
 import { FormItemType } from "@type/formItem";
 
@@ -17,7 +18,7 @@ export interface FormItemTemplate {
 }
 
 export default function useFormItem() {
-  const FORM_ITEM_TEMPLATES: Record<FormItemType, FormItemTemplate> = {
+  const itemTemplates: Record<FormItemType, FormItemTemplate> = {
     text: { label: "テキスト", icon: <TextFields /> },
     textarea: { label: "テキストエリア", icon: <Notes /> },
     checkbox: { label: "チェックボックス", icon: <CheckBox /> },
@@ -26,9 +27,10 @@ export default function useFormItem() {
     number: { label: "数値", icon: <Numbers /> },
     email: { label: "メール", icon: <Email /> },
     date: { label: "日付", icon: <CalendarToday /> },
+    group: { label: "グループ", icon: <Layers /> },
   };
 
   return {
-    itemTemplates: FORM_ITEM_TEMPLATES,
+    itemTemplates,
   };
 }

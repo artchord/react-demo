@@ -6,7 +6,8 @@ export type FormItemType =
   | "select"
   | "number"
   | "email"
-  | "date";
+  | "date"
+  | "group";
 
 export interface FormField {
   id: string;
@@ -15,6 +16,7 @@ export interface FormField {
   placeholder?: string;
   required?: boolean;
   options?: string[];
+  children?: FormField[];
 }
 
 export interface FormBuilderItem {
