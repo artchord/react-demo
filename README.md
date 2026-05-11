@@ -1,6 +1,6 @@
 # react-demo
 
-React + Material UI を使った ToDo アプリです。
+React + Material UI を使った フォームビルダーとTodoアプリです。
 
 ## 起動方法
 
