@@ -69,7 +69,14 @@ function mutateTree(
 }
 
 export default function FormBuilder() {
-  const [formFields, setFormFields] = useState<FormField[]>([]);
+  const [formFields, setFormFields] = useState<FormField[]>(() => {
+    const savedData = sessionStorage.getItem("formFields");
+    return savedData ? (JSON.parse(savedData) as FormField[]) : [];
+  });
+  useEffect(() => {
+    sessionStorage.setItem("formFields", JSON.stringify(formFields));
+  }, [formFields]);
+
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { itemTemplates, getDefaultItem } = useFormBuilder();

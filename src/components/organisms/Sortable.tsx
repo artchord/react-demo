@@ -34,11 +34,20 @@ export default function Sortable({ id, index, children }: SortableProps) {
             { element: el, input, allowedEdges: ["top", "bottom"] }
           );
         },
-        onDrag: ({ self, source }) => {
+        onDrag: ({ self, source, location }) => {
           if (source.data.id === id) {
             setClosestEdge(null);
             return;
           }
+
+          // 自分が一番内側のドロップターゲットである場合のみインジケーターを表示する
+          // これにより、GroupBox内の要素を動かしている時に外側のGroupBoxにインジケーターが出るのを防ぐ
+          const isInnermost = location.current.dropTargets[0].element === el;
+          if (!isInnermost) {
+            setClosestEdge(null);
+            return;
+          }
+
           setClosestEdge(extractClosestEdge(self.data));
         },
         onDragLeave: () => setClosestEdge(null),
