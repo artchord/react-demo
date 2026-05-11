@@ -44,7 +44,12 @@ function ItemBox({
         },
       }}
     >
-      <Box sx={{ flex: 1, pointerEvents: field.type === "group" ? "auto" : "none" }}>
+      <Box
+        sx={{
+          flex: 1,
+          pointerEvents: field.type === "group" ? "auto" : "none",
+        }}
+      >
         {React.cloneElement(formComponents[field.type], {
           item: field,
           fullWidth: true,
@@ -78,7 +83,9 @@ export default function FormSetting({
           color="textSecondary"
           sx={{ textAlign: "center", py: 4 }}
         >
-          フォーム要素をドラッグしてドロップしてください
+          フォーム要素をドラッグしてドロップしてください。
+          <br />
+          グループを使用するとネスト構造を作成できます。
         </Typography>
       ) : (
         <Stack>
@@ -98,5 +105,3 @@ export default function FormSetting({
     </Droppable>
   );
 }
-
-
