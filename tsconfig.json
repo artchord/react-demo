@@ -23,6 +23,11 @@
       "@pages/*": ["./src/pages/*"]
     }
   },
-  "include": ["src", "vite-env.d.ts"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": [
+    "src",
+    "vite-env.d.ts",
+    "vite.config.*",
+    "vite.config.ts",
+    "eslint.config.ts"
+  ]
 }

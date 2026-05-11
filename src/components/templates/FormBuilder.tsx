@@ -2,99 +2,188 @@ import FormItem from "@components/organisms/FormItem";
 import FormSetting from "@components/organisms/FormSetting";
 import FormSettingDialog from "@components/organisms/FormSettingDialog";
 import { Grid, Stack } from "@mui/material";
-import {
-  DragDropProvider,
-  DragOverEvent,
-  PointerSensor,
-  type DragEndEvent,
-} from "@dnd-kit/react";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { FormField, FormItemType } from "@type/formItem";
-import useFormItem from "@hooks/useFormItem";
-import { isSortable } from "@dnd-kit/react/sortable";
+import useFormBuilder from "@hooks/useFormBuilder";
+
+type Operation =
+  | { type: "append"; targetId: string }
+  | { type: "insertBefore"; targetId: string }
+  | { type: "insertAfter"; targetId: string };
+
+function mutateTree(
+  tree: FormField[],
+  itemToMoveOrInsert: FormField,
+  operation: Operation,
+  sourceIdToRemove?: string,
+): FormField[] {
+  const remove = (items: FormField[]): FormField[] => {
+    return items
+      .filter((item) => item.id !== sourceIdToRemove)
+      .map((item) => ({
+        ...item,
+        childItems: item.childItems ? remove(item.childItems) : item.childItems,
+      }));
+  };
+
+  const currentTree = sourceIdToRemove ? remove(tree) : tree;
+
+  const insert = (items: FormField[]): FormField[] => {
+    const result: FormField[] = [];
+    for (const item of items) {
+      if (operation.type === "append" && item.id === operation.targetId) {
+        result.push({
+          ...item,
+          childItems: [...(item.childItems ?? []), itemToMoveOrInsert],
+        });
+      } else if (
+        operation.type === "insertBefore" &&
+        item.id === operation.targetId
+      ) {
+        result.push(itemToMoveOrInsert);
+        result.push(item);
+      } else if (
+        operation.type === "insertAfter" &&
+        item.id === operation.targetId
+      ) {
+        result.push(item);
+        result.push(itemToMoveOrInsert);
+      } else {
+        result.push({
+          ...item,
+          childItems: item.childItems
+            ? insert(item.childItems)
+            : item.childItems,
+        });
+      }
+    }
+    return result;
+  };
+
+  if (operation.type === "append" && operation.targetId === "droppable") {
+    return [...currentTree, itemToMoveOrInsert];
+  }
+  return insert(currentTree);
+}
 
 export default function FormBuilder() {
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [isDraggingTemplate, setIsDraggingTemplate] = useState(false);
-  const [isDragOverDropZone, setIsDragOverDropZone] = useState(false);
-  const { itemTemplates } = useFormItem();
+  const { itemTemplates, getDefaultItem } = useFormBuilder();
 
-  const selectedField = useMemo(
-    () => formFields.find((f) => f.id === selectedFieldId),
-    [formFields, selectedFieldId],
-  );
+  const selectedField = useMemo(() => {
+    if (!selectedFieldId) return undefined;
+    let found: FormField | undefined;
+    const findItem = (items: FormField[]) => {
+      for (const item of items) {
+        if (item.id === selectedFieldId) {
+          found = item;
+          return;
+        }
+        if (item.childItems) findItem(item.childItems);
+      }
+    };
+    findItem(formFields);
+    return found;
+  }, [formFields, selectedFieldId]);
 
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      setIsDragOverDropZone(false);
-      setIsDraggingTemplate(false);
-      setDragOverId(null);
+  useEffect(() => {
+    return monitorForElements({
+      onDrop({ source, location }) {
+        const targets = location.current.dropTargets;
+        if (targets.length === 0) return;
 
-      if (event.canceled) return;
+        const target = targets[0];
+        const sourceId = String(source.data.id) as FormItemType;
+        const targetId = String(target.data.id);
 
-      const { source, target } = event.operation;
+        let operation: Operation;
+        if (target.data.type === "sortable") {
+          const edge = extractClosestEdge(target.data);
+          operation = {
+            type: edge === "top" ? "insertBefore" : "insertAfter",
+            targetId,
+          };
+        } else {
+          const groupId = targetId.replace("droppable-", "");
+          operation = {
+            type: "append",
+            targetId: targetId === "droppable" ? "droppable" : groupId,
+          };
+        }
 
-      if (!source || !target) return;
+        if (source.data.type === "template") {
+          const itemType = sourceId;
+          const newField: FormField = {
+            ...getDefaultItem(itemType, itemTemplates[itemType].settings.label),
+            id: `${itemType}-${Date.now()}`,
+          };
 
-      const sourceId = String(source.id) as FormItemType;
-      const targetId = String(target.id) as FormItemType;
+          setFormFields((prev) => mutateTree(prev, newField, operation));
+          setSelectedFieldId(newField.id);
+        } else if (source.data.type === "sortable") {
+          if (sourceId === targetId || sourceId === operation.targetId) return;
 
-      // 新規アイテムの追加（左側のパレットからのドラッグ）
-      if (itemTemplates[sourceId]) {
-        const itemType = sourceId;
-        const newField: FormField = {
-          id: `${itemType}-${Date.now()}`,
-          type: itemType,
-          label: itemTemplates[itemType].label,
-          placeholder: "",
-          required: false,
-        };
-
-        setFormFields((prev) => {
-          const overIndex = prev.findIndex((f) => f.id === targetId);
-          if (overIndex !== -1) {
-            // 既存のフィールドの上にドロップされた場合、その位置に挿入
-            const updated = [...prev];
-            updated.splice(overIndex, 0, newField);
-            return updated;
-          }
-          // コンテナ自体（ID: "droppable"）にドロップされた場合は末尾に追加
-          return [...prev, newField];
-        });
-        setSelectedFieldId(newField.id);
-      } else {
-        // 既存アイテムの並び替え
-        if (isSortable(source)) {
           setFormFields((prev) => {
-            const oldIndex = source.initialIndex;
-            const newIndex = source.index;
-            if (oldIndex !== -1 && newIndex !== -1) {
-              const updated = [...prev];
-              const [movedItem] = updated.splice(oldIndex, 1);
-              updated.splice(newIndex, 0, movedItem);
-              return updated;
-            }
-            return prev;
+            let movedItem: FormField | undefined;
+            let isDescendant = false;
+
+            const find = (items: FormField[], inSource = false) => {
+              for (const item of items) {
+                if (item.id === sourceId) {
+                  movedItem = item;
+                  if (item.id === targetId || item.id === operation.targetId)
+                    isDescendant = true;
+                  if (item.childItems) find(item.childItems, true);
+                } else {
+                  if (
+                    inSource &&
+                    (item.id === targetId || item.id === operation.targetId)
+                  ) {
+                    isDescendant = true;
+                  }
+                  if (item.childItems) find(item.childItems, inSource);
+                }
+              }
+            };
+            find(prev);
+
+            if (!movedItem || isDescendant) return prev;
+
+            return mutateTree(prev, movedItem, operation, sourceId);
           });
         }
-      }
-    },
-    [itemTemplates],
-  );
+      },
+    });
+  }, [itemTemplates, getDefaultItem]);
 
   function handleUpdateField(id: string, updates: Partial<FormField>) {
-    setFormFields(
-      formFields.map((field) =>
-        field.id === id ? { ...field, ...updates } : field,
-      ),
-    );
+    const updateItem = (items: FormField[]): FormField[] => {
+      return items.map((item) => {
+        if (item.id === id) return { ...item, ...updates };
+        if (item.childItems)
+          return { ...item, childItems: updateItem(item.childItems) };
+        return item;
+      });
+    };
+    setFormFields(updateItem(formFields));
   }
 
   function handleDeleteField(id: string) {
-    setFormFields(formFields.filter((field) => field.id !== id));
+    const removeItem = (items: FormField[]): FormField[] => {
+      return items
+        .filter((item) => item.id !== id)
+        .map((item) => ({
+          ...item,
+          childItems: item.childItems
+            ? removeItem(item.childItems)
+            : item.childItems,
+        }));
+    };
+    setFormFields(removeItem(formFields));
     if (selectedFieldId === id) setSelectedFieldId(null);
     setIsModalOpen(false);
   }
@@ -104,55 +193,33 @@ export default function FormBuilder() {
     setIsModalOpen(true);
   }
 
-  function handleDragOver(event: DragOverEvent) {
-    // ドラッグ開始時の判定
-    const sourceId = String(event.operation.source?.id);
-    if (itemTemplates[sourceId as FormItemType]) {
-      setIsDraggingTemplate(true);
-    }
-    const targetId = event.operation.target?.id;
-    setIsDragOverDropZone(!!targetId);
-    setDragOverId(targetId ? String(targetId) : null);
-  }
-
   return (
-    <DragDropProvider
-      sensors={[PointerSensor]}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
-      <Grid container spacing={2} sx={{ height: "calc(100% - 48px)" }}>
-        {/* 左側：フォーム要素 */}
-        <Grid size={{ xs: 6, md: 3 }}>
-          <FormItem />
-        </Grid>
-
-        {/* 右側：フォーム編集エリア */}
-        <Grid size={{ xs: 6, md: 9 }}>
-          <Stack spacing={1} sx={{ height: "100%" }}>
-            {/* フォームプレビュー */}
-            <FormSetting
-              id="droppable"
-              isActive={isDragOverDropZone}
-              dragOverId={dragOverId}
-              isDraggingTemplate={isDraggingTemplate}
-              setSelectedFieldId={setSelectedFieldId}
-              selectedFieldId={selectedFieldId}
-              formFields={formFields}
-              onSettingsClick={handleSettingsClick}
-            />
-
-            {/* フィールド設定モーダル */}
-            <FormSettingDialog
-              open={isModalOpen}
-              field={selectedField}
-              onClose={() => setIsModalOpen(false)}
-              onUpdate={handleUpdateField}
-              onDelete={handleDeleteField}
-            />
-          </Stack>
-        </Grid>
+    <Grid container spacing={2} sx={{ height: "calc(100% - 48px)" }}>
+      {/* 左側：フォーム要素 */}
+      <Grid size={{ xs: 6, md: 3 }}>
+        <FormItem />
       </Grid>
-    </DragDropProvider>
+
+      {/* 右側：フォーム編集エリア */}
+      <Grid size={{ xs: 6, md: 9 }}>
+        <Stack spacing={1} sx={{ height: "100%" }}>
+          {/* フォームプレビュー */}
+          <FormSetting
+            id="droppable"
+            formFields={formFields}
+            onSettingsClick={handleSettingsClick}
+          />
+
+          {/* フィールド設定モーダル */}
+          <FormSettingDialog
+            open={isModalOpen}
+            field={selectedField}
+            onClose={() => setIsModalOpen(false)}
+            onUpdate={handleUpdateField}
+            onDelete={handleDeleteField}
+          />
+        </Stack>
+      </Grid>
+    </Grid>
   );
 }

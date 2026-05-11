@@ -40,16 +40,22 @@ export default function FormSettingDialog({
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField
               label="ラベル"
-              value={field.label}
-              onChange={(e) => onUpdate(field.id, { label: e.target.value })}
+              value={field.settings.label}
+              onChange={(e) =>
+                onUpdate(field.id, {
+                  settings: { ...field.settings, label: e.target.value },
+                })
+              }
               fullWidth
               size="small"
             />
             <TextField
               label="プレースホルダー"
-              value={field.placeholder ?? ""}
+              value={field.settings.placeholder ?? ""}
               onChange={(e) =>
-                onUpdate(field.id, { placeholder: e.target.value })
+                onUpdate(field.id, {
+                  settings: { ...field.settings, placeholder: e.target.value },
+                })
               }
               fullWidth
               size="small"
@@ -57,9 +63,11 @@ export default function FormSettingDialog({
             <Box>
               <input
                 type="checkbox"
-                checked={field.required ?? false}
+                checked={field.settings.required ?? false}
                 onChange={(e) =>
-                  onUpdate(field.id, { required: e.target.checked })
+                  onUpdate(field.id, {
+                    settings: { ...field.settings, required: e.target.checked },
+                  })
                 }
                 id={`required-${field.id}`}
               />
