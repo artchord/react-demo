@@ -6,18 +6,19 @@ export type FormItemType =
   | "select"
   | "number"
   | "email"
-  | "date";
+  | "date"
+  | "group";
+
+export interface FormSettings {
+  label: string;
+  required: boolean;
+  placeholder: string;
+  value?: string;
+}
 
 export interface FormField {
   id: string;
   type: FormItemType;
-  label: string;
-  placeholder?: string;
-  required?: boolean;
-  options?: string[];
-}
-
-export interface FormBuilderItem {
-  id: string;
-  type: FormItemType;
+  settings: FormSettings;
+  childItems?: FormField[];
 }

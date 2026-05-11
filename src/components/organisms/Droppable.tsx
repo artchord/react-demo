@@ -1,4 +1,5 @@
-import { useDroppable } from "@dnd-kit/react";
+import { useEffect, useRef, useState } from "react";
+import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { Box } from "@mui/material";
 
 interface DroppableProps {
@@ -7,10 +8,24 @@ interface DroppableProps {
   isActive?: boolean;
 }
 
-export default function Droppable({ id, children, isActive }: DroppableProps) {
-  const { ref } = useDroppable({
-    id,
-  });
+export default function Droppable({ id, children, isActive: defaultIsActive }: DroppableProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    return dropTargetForElements({
+      element: el,
+      getData: () => ({ id, type: "dropZone" }),
+      onDragEnter: () => setIsDragOver(true),
+      onDragLeave: () => setIsDragOver(false),
+      onDrop: () => setIsDragOver(false),
+    });
+  }, [id]);
+
+  const isActive = defaultIsActive ?? isDragOver;
 
   return (
     <Box
