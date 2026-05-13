@@ -5,7 +5,7 @@ import Select, {
   type SelectChangeEvent,
   type BaseSelectProps,
 } from "@mui/material/Select";
-import { FormLabel } from "@mui/material";
+import { FormHelperText, FormLabel } from "@mui/material";
 import type { FormField } from "@type/formItem";
 
 interface Props {
@@ -24,8 +24,17 @@ export default function SelectBox({
   const id = React.useId();
   const { label = "", required = false } = item?.settings ?? {};
   return (
-    <FormControl fullWidth required={required}>
-      <FormLabel required={required}>{label}</FormLabel>
+    <FormControl fullWidth required={required} error={!selectedValue}>
+      <FormLabel
+        required={required}
+        sx={{
+          "& .MuiFormLabel-asterisk": {
+            color: "error.main",
+          },
+        }}
+      >
+        {label}
+      </FormLabel>
       <Select
         labelId={`${id}-select-label`}
         id={`${id}-select`}
@@ -43,6 +52,9 @@ export default function SelectBox({
           </MenuItem>
         ))}
       </Select>
+      <FormHelperText sx={{ color: "red" }}>
+        {required && !selectedValue ? "必須項目です" : ""}
+      </FormHelperText>
     </FormControl>
   );
 }

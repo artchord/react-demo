@@ -8,12 +8,12 @@ import DefaultLayout from "../layouts/DefaultLayout";
 export default function Todo() {
   const [title, setTitle] = useState("");
   const [todos, setTodos] = useState<Todo[]>(() => {
-    const savedData = localStorage.getItem("todos");
+    const savedData = sessionStorage.getItem("todos");
     return savedData ? (JSON.parse(savedData) as Todo[]) : [];
   });
 
   useEffect(() => {
-    localStorage.setItem("todos", JSON.stringify(todos));
+    sessionStorage.setItem("todos", JSON.stringify(todos));
   }, [todos]);
 
   const addTodo = () => {
@@ -56,7 +56,7 @@ export default function Todo() {
             ・タスクの右端のゴミ箱アイコンを押すとタスクが削除されます。
           </div>
           <div>
-            ・ローカルストレージに保存しているのでリロードしてもタスクは維持されます。
+            ・セッションストレージに保存しているのでリロードしてもタスクは維持されます。
           </div>
         </InfoBox>
         <TodoList
