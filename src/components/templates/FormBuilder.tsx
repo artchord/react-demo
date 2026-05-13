@@ -1,12 +1,13 @@
 import FormItem from "@components/organisms/FormItem";
 import FormSetting from "@components/organisms/FormSetting";
 import FormSettingDialog from "@components/organisms/FormSettingDialog";
-import { Grid, Stack } from "@mui/material";
+import { Grid, Stack, Tabs, Tab, Box, Container } from "@mui/material";
 import { useState, useMemo, useEffect } from "react";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { FormField, FormItemType } from "@type/formItem";
 import useFormBuilder from "@hooks/useFormBuilder";
+import FormPreview from "@components/templates/FormPreview";
 
 type Operation =
   | { type: "append"; targetId: string }
@@ -79,6 +80,7 @@ export default function FormBuilder() {
 
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [value, setValue] = useState("1");
   const { itemTemplates, getDefaultItem } = useFormBuilder();
 
   const selectedField = useMemo(() => {
@@ -200,33 +202,61 @@ export default function FormBuilder() {
     setIsModalOpen(true);
   }
 
+  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+    setValue(newValue);
+  };
+
   return (
-    <Grid container spacing={2} sx={{ height: "calc(100% - 48px)" }}>
-      {/* 左側：フォーム要素 */}
-      <Grid size={{ xs: 6, md: 3 }}>
-        <FormItem />
-      </Grid>
+    <Box sx={{ width: "100%", height: "calc(100% - 48px)" }}>
+      <Tabs value={value} onChange={handleChange}>
+        <Tab value="1" label="ビルダー" />
+        <Tab value="2" label="プレビュー" />
+      </Tabs>
+      {value === "1" ? (
+        <Grid container spacing={2} sx={{ height: "calc(100% - 48px)" }}>
+          {/* 左側：フォーム要素 */}
+          <Grid size={{ xs: 6, md: 3 }}>
+            <FormItem />
+          </Grid>
 
-      {/* 右側：フォーム編集エリア */}
-      <Grid size={{ xs: 6, md: 9 }}>
-        <Stack spacing={1} sx={{ height: "100%" }}>
-          {/* フォームプレビュー */}
-          <FormSetting
-            id="droppable"
-            formFields={formFields}
-            onSettingsClick={handleSettingsClick}
-          />
+          {/* 右側：フォーム編集エリア */}
+          <Grid size={{ xs: 6, md: 9 }}>
+            <Stack spacing={1} sx={{ height: "100%" }}>
+              {/* フォームプレビュー */}
+              <FormSetting
+                id="droppable"
+                formFields={formFields}
+                onSettingsClick={handleSettingsClick}
+              />
 
-          {/* フィールド設定モーダル */}
-          <FormSettingDialog
-            open={isModalOpen}
-            field={selectedField}
-            onClose={() => setIsModalOpen(false)}
-            onUpdate={handleUpdateField}
-            onDelete={handleDeleteField}
-          />
-        </Stack>
-      </Grid>
-    </Grid>
+              {/* フィールド設定モーダル */}
+              <FormSettingDialog
+                open={isModalOpen}
+                field={selectedField}
+                onClose={() => setIsModalOpen(false)}
+                onUpdate={handleUpdateField}
+                onDelete={handleDeleteField}
+              />
+            </Stack>
+          </Grid>
+        </Grid>
+      ) : (
+        <Container maxWidth="md">
+          <Box
+            sx={{
+              p: 3,
+              mt: 2,
+              width: "100%",
+              height: "100%",
+              border: "2px dashed",
+              borderColor: "divider",
+              borderRadius: 1,
+            }}
+          >
+            <FormPreview formFields={formFields} />
+          </Box>
+        </Container>
+      )}
+    </Box>
   );
 }
