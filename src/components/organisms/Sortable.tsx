@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import {
+  draggable,
+  dropTargetForElements,
+} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
-import { attachClosestEdge, extractClosestEdge, type Edge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
+import {
+  attachClosestEdge,
+  extractClosestEdge,
+  type Edge,
+} from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { DropIndicator } from "@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box";
 
 interface SortableProps {
@@ -31,7 +38,7 @@ export default function Sortable({ id, index, children }: SortableProps) {
         getData: ({ input }) => {
           return attachClosestEdge(
             { id, index, type: "sortable" },
-            { element: el, input, allowedEdges: ["top", "bottom"] }
+            { element: el, input, allowedEdges: ["top", "bottom"] },
           );
         },
         onDrag: ({ self, source, location }) => {
@@ -52,15 +59,17 @@ export default function Sortable({ id, index, children }: SortableProps) {
         },
         onDragLeave: () => setClosestEdge(null),
         onDrop: () => setClosestEdge(null),
-      })
+      }),
     );
   }, [id, index]);
 
   return (
-    <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1, position: "relative" }}>
+    <div
+      ref={ref}
+      style={{ opacity: isDragging ? 0.5 : 1, position: "relative" }}
+    >
       {children}
       {closestEdge && <DropIndicator edge={closestEdge} gap="8px" />}
     </div>
   );
 }
-
